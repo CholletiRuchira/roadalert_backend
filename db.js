@@ -2,13 +2,16 @@ const mysql = require('mysql2/promise');
 require('dotenv').config();
 
 const pool = mysql.createPool({
-  host:     process.env.DB_HOST     || 'localhost',
-  port:     process.env.DB_PORT     || 3306,
-  user:     process.env.DB_USER     || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME     || 'roadalert',
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
   waitForConnections: true,
   connectionLimit: 10,
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
 async function initDB() {
@@ -16,6 +19,7 @@ async function initDB() {
     const conn = await pool.getConnection();
     console.log('✅ MySQL connected successfully');
 
+    // USERS TABLE
     await conn.execute(`
       CREATE TABLE IF NOT EXISTS users (
         id          VARCHAR(36) PRIMARY KEY,
@@ -28,6 +32,7 @@ async function initDB() {
       )
     `);
 
+    // REPORTS TABLE
     await conn.execute(`
       CREATE TABLE IF NOT EXISTS reports (
         id            VARCHAR(36) PRIMARY KEY,
@@ -49,6 +54,7 @@ async function initDB() {
       )
     `);
 
+    // ACTIVITY LOG TABLE
     await conn.execute(`
       CREATE TABLE IF NOT EXISTS activity_log (
         id          VARCHAR(36) PRIMARY KEY,
@@ -61,6 +67,7 @@ async function initDB() {
       )
     `);
 
+    // CREATE DEFAULT ADMIN
     const bcrypt = require('bcryptjs');
     const { v4: uuidv4 } = require('uuid');
 
@@ -84,7 +91,7 @@ async function initDB() {
 
   } catch (err) {
     console.error('❌ Database error:', err.message);
-    process.exit(1);
+    // ❌ DO NOT exit (prevents crash on Render)
   }
 }
 
